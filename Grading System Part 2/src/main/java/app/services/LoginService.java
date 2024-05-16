@@ -4,9 +4,7 @@ import database.Database;
 
 public class LoginService
 {
-    private LoginService()
-    {
-    }
+    private LoginService() {}
     
     public static boolean validateUser(String student_email , String student_password)
     {

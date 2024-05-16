@@ -20,13 +20,6 @@ public class DisplayInformationServlet extends HttpServlet
         
         request.setAttribute( "course" , course );
         request.setAttribute( "student_ID" , student_ID );
-        
-        /*
-         * Students can see their marks in different courses,and select a particular
-         * course to see their mark and the class avg/ median/ highest/lowest marks.
-         *
-         */
-        
         request.setAttribute( "student_mark" , DataRetrievingService.getMarkByStudentID( student_ID , course ) );
         request.setAttribute( "class_average" , DataRetrievingService.getAverageMark( course ) );
         request.setAttribute( "class_median" , DataRetrievingService.getMedianMark( course ) );

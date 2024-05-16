@@ -1,10 +1,4 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: essam
-  Date: 2022-04-25
-  Time: 3:31 AM
-  To change this template use File | Settings | File Templates.
---%>
+
 <%@ page contentType="text/html;charset=UTF-8" %>
 <html>
 <head>
@@ -37,8 +31,6 @@
     <br>
 
     <div class="d-grid">
-        <!-- button to return to the previous page -->
-        <%--        <a class="btn btn-outline-success btn-lg btn-block" onCLick="history.back()">Back</a>--%>
         <a class="btn btn-outline-success btn-lg btn-block" href="/returnToHomePage.springmvc">Back</a>
     </div>
 </div>

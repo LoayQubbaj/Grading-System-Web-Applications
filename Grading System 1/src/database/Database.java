@@ -1,0 +1,349 @@
+package database;
+
+import java.sql.*;
+import java.util.ArrayList;
+
+public class Database {
+    private static Connection connection = null;
+    private static PreparedStatement preparedStatement = null;
+    private static ResultSet resultSet = null;
+
+    private Database() {
+    }
+    private static void initializeConnection() {
+        if (connection == null) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/grading_system",
+                        "root", "1234");
+                System.out.println("Database connected");
+            } catch (SQLException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static boolean isStudent(String student_email, String student_password) {
+        initializeConnection();
+        try {
+            preparedStatement = connection.prepareStatement("SELECT * FROM students " +
+                    "WHERE LOWER(student_email) = LOWER(?) AND student_password = ? ;");
+            preparedStatement.setString(1, student_email);
+            preparedStatement.setString(2, student_password);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next();
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public static boolean isInstructor(String instructor_email, String instructor_password) {
+        initializeConnection();
+        try {
+            preparedStatement = connection.prepareStatement("SELECT * FROM instructors " +
+                    "WHERE LOWER(instructor_email) = LOWER(?) AND instructor_password = ?;");
+            preparedStatement.setString(1, instructor_email);
+            preparedStatement.setString(2, instructor_password);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static boolean isAdmin(String admin_email, String admin_password) {
+        initializeConnection();
+        try {
+            preparedStatement = connection.prepareStatement("SELECT * FROM admins " +
+                    "WHERE LOWER(admin_email) = LOWER(?) AND admin_password = ?;");
+            preparedStatement.setString(1, admin_email);
+            preparedStatement.setString(2, admin_password);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public static int getMark(String student_email, String course_name) {
+        initializeConnection();
+        try {
+            String sql_statement =
+                    "SELECT m.mark FROM marks m " +
+                            "WHERE m.student_id IN (SELECT s.student_id " +
+                            "FROM students s WHERE LOWER(s.student_email) = LOWER(?)) " +
+                            "AND m.course_id IN (SELECT c.course_id FROM courses c " +
+                            "WHERE LOWER(c.course_name) = LOWER(?));";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, student_email);
+            preparedStatement.setString(2, course_name);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getInt("mark") : -1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+    public static int getLowestMark(String course_name) {
+        initializeConnection();
+        try {
+            String sql_statement = "SELECT MIN(m.mark) FROM marks m " +
+                    "WHERE m.course_id IN (SELECT c.course_id FROM courses c WHERE LOWER(c.course_name) = LOWER(?));";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, course_name);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getInt(1) : -1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+    public static int getHighestMark(String course_name) {
+        initializeConnection();
+        try {
+            String sql_statement = "SELECT MAX(m.mark) FROM marks m " +
+                    "WHERE m.course_id IN (SELECT c.course_id FROM courses c WHERE LOWER(c.course_name) = LOWER(?));";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, course_name);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getInt(1) : -1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+    public static int getAverageMark(String course_name) {
+        initializeConnection();
+        try {
+            String sql_statement = "SELECT AVG(m.mark) FROM marks m " +
+                    "WHERE m.course_id IN (SELECT c.course_id FROM courses c WHERE LOWER(c.course_name) = LOWER(?));";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, course_name);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getInt(1) : -1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+    public static int getMedianMark(String course_name) {
+        initializeConnection();
+        try {
+            String sql_statement = "SET @rowindex := -1;";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.executeUpdate();
+
+            String sql_statement2 = "SELECT AVG(d.mark) as Median " +
+                    "FROM (SELECT @rowindex:=@rowindex + 1 AS rowindex, sm.mark AS mark " +
+                    "FROM (SELECT m.mark FROM marks AS m WHERE m.course_id IN " +
+                    "(SELECT c.course_id FROM courses c WHERE LOWER(c.course_name) = LOWER(?))) AS sm " +
+                    "ORDER BY sm.mark) AS d " +
+                    "WHERE d.rowindex IN (FLOOR(@rowindex / 2), CEIL(@rowindex / 2));";
+            preparedStatement = connection.prepareStatement(sql_statement2);
+            preparedStatement.setString(1, course_name);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getInt(1) : -1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+    public static String getStudentName(String student_email) {
+        initializeConnection();
+        try {
+            String sql_statement = "SELECT s.student_name FROM students s WHERE s.student_email = ?; ";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, student_email);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getString(1) : null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public static String getAdminName(String admin_email) {
+        initializeConnection();
+        try {
+            String sql_statement = "SELECT s.admin_name FROM admins s WHERE s.admin_email = ?; ";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, admin_email);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getString(1) : null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public static String getInstructorName(String instructor_email) {
+        initializeConnection();
+        try {
+            String sql_statement = "SELECT s.instructor_name FROM instructors s WHERE s.instructor_email = ?; ";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, instructor_email);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() ? resultSet.getString(1) : null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public static ArrayList<String> getCourses(String student_email) {
+        initializeConnection();
+        ArrayList<String> courses = new ArrayList<>();
+        try {
+            String sql_statement =
+                    "SELECT LOWER(c.course_name) FROM courses c " +
+                            "WHERE c.course_id IN (SELECT m2.course_id FROM marks m2 " +
+                            "WHERE m2.student_id IN (SELECT s.student_id FROM students s " +
+                            "WHERE LOWER(s.student_email) = LOWER(?)));";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, student_email);
+            resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                courses.add(resultSet.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return courses;
+    }
+
+    public static ArrayList<String> getCoursesAndMarks(String student_email) {
+        initializeConnection();
+        ArrayList<String> courses = new ArrayList<>();
+        int student_id = getStudentID(student_email);
+        try {
+            String sql_statement =
+                    "SELECT c.course_name, m.mark FROM courses c, marks m " +
+                            "WHERE c.course_id IN (SELECT m2.course_id FROM marks m2 " +
+                            "WHERE m2.student_id = ?) " +
+                            "AND c.course_id = m.course_id " +
+                            "AND m.student_id = ?;";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setInt(1, student_id);
+            preparedStatement.setInt(2, student_id);
+            resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                courses.add(resultSet.getString(1) + " " + resultSet.getString(2));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return courses;
+    }
+
+    public static int getStudentID(String student_email) {
+        initializeConnection();
+        int student_id = 0;
+        String sql_statement = "SELECT s.student_id FROM students s WHERE s.student_email = ?;";
+        try {
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, student_email);
+            resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                student_id = resultSet.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return student_id;
+    }
+
+
+    public static boolean addNewInstructor(String instructorName, String instructorEmail, String instructorPassword) {
+        initializeConnection();
+        try {
+            String sql_statement = "INSERT INTO instructors (instructor_name, instructor_email, instructor_password) VALUES (?, ?, ?)";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, instructorName);
+            preparedStatement.setString(2, instructorEmail);
+            preparedStatement.setString(3, instructorPassword);
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static boolean addNewStudent(String studentName, String studentEmail, String studentPassword) {
+        initializeConnection();
+        try {
+            String sql_statement = "INSERT INTO students (student_name, student_email, student_password) VALUES (?, ?, ?)";
+            preparedStatement = connection.prepareStatement(sql_statement);
+            preparedStatement.setString(1, studentName);
+            preparedStatement.setString(2, studentEmail);
+            preparedStatement.setString(3, studentPassword);
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static boolean addMark(int studentID, int courseID, int mark) {
+        initializeConnection();
+        try {
+            if (isMarkExists(studentID, courseID)) {
+                System.out.println("Mark already exists for the student and course.");
+                return false;
+            }
+            String sqlStatement = "INSERT INTO marks (student_id, course_id, mark) VALUES (?, ?, ?)";
+            preparedStatement = connection.prepareStatement(sqlStatement);
+            preparedStatement.setInt(1, studentID);
+            preparedStatement.setInt(2, courseID);
+            preparedStatement.setInt(3, mark);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public static boolean isStudentExists(int studentID) {
+        initializeConnection();
+        try {
+            String sqlStatement = "SELECT COUNT(*) FROM students WHERE student_id = ?";
+            preparedStatement = connection.prepareStatement(sqlStatement);
+            preparedStatement.setInt(1, studentID);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() && resultSet.getInt(1) > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static boolean isCourseExists(int courseID) {
+        initializeConnection();
+        try {
+            String sqlStatement = "SELECT COUNT(*) FROM courses WHERE course_id = ?";
+            preparedStatement = connection.prepareStatement(sqlStatement);
+            preparedStatement.setInt(1, courseID);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() && resultSet.getInt(1) > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static boolean isMarkExists(int studentID, int courseID) {
+        initializeConnection();
+        try {
+            String sqlStatement = "SELECT COUNT(*) FROM marks WHERE student_id = ? AND course_id = ?";
+            preparedStatement = connection.prepareStatement(sqlStatement);
+            preparedStatement.setInt(1, studentID);
+            preparedStatement.setInt(2, courseID);
+            resultSet = preparedStatement.executeQuery();
+            return resultSet.next() && resultSet.getInt(1) > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+}

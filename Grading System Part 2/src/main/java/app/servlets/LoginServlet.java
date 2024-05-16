@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 
 @WebServlet (urlPatterns = "/login.servlets")
@@ -26,8 +28,9 @@ public class LoginServlet extends HttpServlet
     {
         String email = request.getParameter( "email" );
         String password = request.getParameter( "password" );
-        
-        boolean is_valid_user = LoginService.validateUser( email , password );
+        //hashing the password for searching
+        String student_password = hashPassword(password);
+        boolean is_valid_user = LoginService.validateUser( email , student_password );
         
         if(is_valid_user)
         {
@@ -41,6 +44,27 @@ public class LoginServlet extends HttpServlet
         {
             request.setAttribute( "errorMessage" , "Invalid Credentials !!" );
             request.getRequestDispatcher( "/WEB-INF/views/login.jsp" ).forward( request , response );
+        }
+    }
+    //method to hash the password
+    private String hashPassword(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes());
+
+            // Convert the byte array to a hexadecimal string
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xFF & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

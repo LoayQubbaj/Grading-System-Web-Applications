@@ -6,9 +6,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class LoginService
 {
-    private LoginService()
-    {
-    }
+    private LoginService() {}
     
     public static boolean validateUser(String student_email , String student_password)
     {

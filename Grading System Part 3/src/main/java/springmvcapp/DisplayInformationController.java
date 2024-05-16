@@ -19,12 +19,6 @@ public class DisplayInformationController
         System.out.println( "Student ID: " + studentID );
         
         model.put( "course" , course );
-        
-        /*
-         * Students can see their marks in different courses,and select a particular
-         * course to see their mark and the class avg/ median/ highest/lowest marks.
-         */
-        
         model.put( "student_mark" , DataRetrievingService.getMarkByStudentID( studentID , course ) );
         model.put( "class_average" , DataRetrievingService.getAverageMark( course ) );
         model.put( "class_median" , DataRetrievingService.getMedianMark( course ) );
@@ -38,6 +32,6 @@ public class DisplayInformationController
     public String returnToHomePage()
     {
         return "welcome";
-        //return "redirect:welcome.jsp";
+
     }
 }

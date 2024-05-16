@@ -6,8 +6,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="GradingSystemPart3" />
         <module name="Grading System Part 2" />
-        <module name="Grading System Part 3" />
       </profile>
     </annotationProcessing>
   </component>
